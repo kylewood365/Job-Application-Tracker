@@ -25,3 +25,17 @@ def initialize_database(database_name=DATABASE_NAME):
 
     connection.commit()
     connection.close()
+
+
+def add_application(company, position, status, database_name=DATABASE_NAME):
+    """Add one job application to the applications table."""
+    connection = sqlite3.connect(database_name)
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "INSERT INTO applications (company, position, status) VALUES (?, ?, ?)",
+        (company, position, status),
+    )
+
+    connection.commit()
+    connection.close()
