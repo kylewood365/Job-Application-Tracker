@@ -36,12 +36,25 @@ rejected_card.metric("Rejected", status_counts["Rejected"])
 company = st.text_input("Company")
 position = st.text_input("Position / Job title")
 status = st.selectbox("Status", ["Applied", "Interview", "Offer", "Rejected"])
+date_applied = st.date_input("Date applied")
+interview_date = st.date_input(
+    "Interview date (optional)",
+    value=None,
+)
 
 if st.button("Save application"):
     if not company.strip() or not position.strip():
         st.error("Please enter both a company and a position.")
     else:
-        add_application(company.strip(), position.strip(), status)
+        add_application(
+            company.strip(),
+            position.strip(),
+            status,
+            date_applied=date_applied.isoformat(),
+            interview_date=(
+                interview_date.isoformat() if interview_date is not None else None
+            ),
+        )
         st.success("Application saved successfully!")
 
 st.subheader("Update Application Status")
@@ -105,8 +118,19 @@ status_filter = st.selectbox(
 applications = search_applications(search_text, status_filter)
 
 if applications:
-    for saved_company, saved_position, saved_status in applications:
-        st.write(f"**{saved_company}** — {saved_position} — {saved_status}")
+    for (
+        saved_company,
+        saved_position,
+        saved_status,
+        saved_date_applied,
+        saved_interview_date,
+    ) in applications:
+        details = f"**{saved_company}** — {saved_position} — {saved_status}"
+        if saved_date_applied:
+            details += f" — Applied: {saved_date_applied}"
+        if saved_interview_date:
+            details += f" — Interview: {saved_interview_date}"
+        st.write(details)
 else:
     if search_text.strip():
         st.info("No applications match your search. Try a different search term.")

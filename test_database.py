@@ -1,6 +1,7 @@
 """Tests for the Job Application Tracker database functions."""
 
 import os
+import sqlite3
 import tempfile
 import unittest
 
@@ -42,8 +43,8 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(
             applications,
             [
-                ("Example Company", "Developer", "Applied"),
-                ("Another Company", "Designer", "Interview"),
+                ("Example Company", "Developer", "Applied", None, None),
+                ("Another Company", "Designer", "Interview", None, None),
             ],
         )
 
@@ -76,8 +77,8 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(
             applications,
             [
-                ("Example Company", "Developer", "Applied"),
-                ("Another Company", "Designer", "Interview"),
+                ("Example Company", "Developer", "Applied", None, None),
+                ("Another Company", "Designer", "Interview", None, None),
             ],
         )
 
@@ -91,8 +92,8 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(
             applications,
             [
-                ("Example Company", "Developer", "Applied"),
-                ("Third Company", "Engineer", "Applied"),
+                ("Example Company", "Developer", "Applied", None, None),
+                ("Third Company", "Engineer", "Applied", None, None),
             ],
         )
 
@@ -111,7 +112,7 @@ class DatabaseTests(unittest.TestCase):
 
         self.assertEqual(
             applications,
-            [("Example Company", "Developer", "Applied")],
+            [("Example Company", "Developer", "Applied", None, None)],
         )
 
     def test_search_finds_position_case_insensitively(self):
@@ -122,7 +123,7 @@ class DatabaseTests(unittest.TestCase):
 
         self.assertEqual(
             applications,
-            [("Example Company", "Software Developer", "Applied")],
+            [("Example Company", "Software Developer", "Applied", None, None)],
         )
 
     def test_search_works_with_status_filter(self):
@@ -135,7 +136,7 @@ class DatabaseTests(unittest.TestCase):
 
         self.assertEqual(
             applications,
-            [("Second Company", "Developer", "Interview")],
+            [("Second Company", "Developer", "Interview", None, None)],
         )
 
     def test_empty_search_returns_applications_normally(self):
@@ -147,8 +148,8 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(
             applications,
             [
-                ("First Company", "Developer", "Applied"),
-                ("Second Company", "Designer", "Interview"),
+                ("First Company", "Developer", "Applied", None, None),
+                ("Second Company", "Designer", "Interview", None, None),
             ],
         )
 
@@ -171,8 +172,8 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(
             get_all_applications(self.database_name),
             [
-                ("Example Company", "Developer", "Interview"),
-                ("Another Company", "Designer", "Applied"),
+                ("Example Company", "Developer", "Interview", None, None),
+                ("Another Company", "Designer", "Applied", None, None),
             ],
         )
 
@@ -185,7 +186,7 @@ class DatabaseTests(unittest.TestCase):
 
         self.assertEqual(
             get_all_applications(self.database_name),
-            [("Another Company", "Designer", "Interview")],
+            [("Another Company", "Designer", "Interview", None, None)],
         )
 
     def test_delete_application_ignores_an_unknown_id(self):
@@ -195,7 +196,71 @@ class DatabaseTests(unittest.TestCase):
 
         self.assertEqual(
             get_all_applications(self.database_name),
-            [("Example Company", "Developer", "Applied")],
+            [("Example Company", "Developer", "Applied", None, None)],
+        )
+
+    def test_date_applied_and_interview_date_are_saved(self):
+        add_application(
+            "Example Company",
+            "Developer",
+            "Interview",
+            self.database_name,
+            date_applied="2026-08-01",
+            interview_date="2026-08-15",
+        )
+
+        self.assertEqual(
+            get_all_applications(self.database_name),
+            [
+                (
+                    "Example Company",
+                    "Developer",
+                    "Interview",
+                    "2026-08-01",
+                    "2026-08-15",
+                )
+            ],
+        )
+
+    def test_interview_date_can_be_empty(self):
+        add_application(
+            "Example Company",
+            "Developer",
+            "Applied",
+            self.database_name,
+            date_applied="2026-08-01",
+        )
+
+        self.assertEqual(
+            get_all_applications(self.database_name),
+            [("Example Company", "Developer", "Applied", "2026-08-01", None)],
+        )
+
+    def test_initialize_database_migrates_an_existing_database_safely(self):
+        os.remove(self.database_name)
+        connection = sqlite3.connect(self.database_name)
+        connection.execute(
+            """
+            CREATE TABLE applications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                company TEXT NOT NULL,
+                position TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'Applied'
+            )
+            """
+        )
+        connection.execute(
+            "INSERT INTO applications (company, position, status) VALUES (?, ?, ?)",
+            ("Saved Company", "Engineer", "Applied"),
+        )
+        connection.commit()
+        connection.close()
+
+        initialize_database(self.database_name)
+
+        self.assertEqual(
+            get_all_applications(self.database_name),
+            [("Saved Company", "Engineer", "Applied", None, None)],
         )
 
 
