@@ -41,6 +41,34 @@ def add_application(company, position, status, database_name=DATABASE_NAME):
     connection.close()
 
 
+def update_application_status(application_id, new_status, database_name=DATABASE_NAME):
+    """Update the status of one saved application."""
+    connection = sqlite3.connect(database_name)
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "UPDATE applications SET status = ? WHERE id = ?",
+        (new_status, application_id),
+    )
+
+    connection.commit()
+    connection.close()
+
+
+def get_applications_with_ids(database_name=DATABASE_NAME):
+    """Return every saved application, including its database ID."""
+    connection = sqlite3.connect(database_name)
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT id, company, position, status FROM applications ORDER BY id"
+    )
+    applications = cursor.fetchall()
+
+    connection.close()
+    return applications
+
+
 def get_all_applications(database_name=DATABASE_NAME):
     """Return every saved application from the applications table."""
     connection = sqlite3.connect(database_name)

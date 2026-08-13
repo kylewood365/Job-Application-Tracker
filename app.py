@@ -2,7 +2,13 @@
 
 import streamlit as st
 
-from database import add_application, get_all_applications, initialize_database
+from database import (
+    add_application,
+    get_applications_with_ids,
+    get_all_applications,
+    initialize_database,
+    update_application_status,
+)
 
 
 # Create the database table before showing the page.
@@ -24,8 +30,32 @@ if st.button("Save application"):
         add_application(company.strip(), position.strip(), status)
         st.success("Application saved successfully!")
 
+st.subheader("Update Application Status")
+
+applications_with_ids = get_applications_with_ids()
+
+if applications_with_ids:
+    selected_application = st.selectbox(
+        "Choose an application",
+        applications_with_ids,
+        format_func=lambda application: (
+            f"{application[1]} — {application[2]} ({application[3]})"
+        ),
+    )
+    new_status = st.selectbox(
+        "New status",
+        ["Applied", "Interview", "Offer", "Rejected"],
+    )
+
+    if st.button("Update status"):
+        update_application_status(selected_application[0], new_status)
+        st.success("Application status updated successfully!")
+else:
+    st.info("Save an application before updating its status.")
+
 st.subheader("Saved Applications")
 
+# Read the applications after the update so the new status appears immediately.
 applications = get_all_applications()
 
 if applications:
