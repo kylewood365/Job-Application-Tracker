@@ -4,6 +4,7 @@ import os
 import sqlite3
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from database import (
     add_application,
@@ -12,6 +13,7 @@ from database import (
     get_applications_by_status,
     get_applications_with_ids,
     get_all_applications,
+    get_database_backend,
     get_total_application_count,
     initialize_database,
     search_applications,
@@ -30,6 +32,28 @@ class DatabaseTests(unittest.TestCase):
 
     def tearDown(self):
         os.remove(self.database_name)
+
+    def test_default_database_uses_sqlite_without_database_url(self):
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(get_database_backend(), "sqlite")
+
+    def test_default_database_uses_postgresql_with_database_url(self):
+        # Selection can be tested with a fake URL; no external connection is made.
+        with patch.dict(
+            os.environ,
+            {"DATABASE_URL": "postgresql://example.invalid/test"},
+            clear=True,
+        ):
+            self.assertEqual(get_database_backend(), "postgresql")
+
+    def test_explicit_test_database_stays_on_sqlite_with_database_url(self):
+        with patch.dict(
+            os.environ,
+            {"DATABASE_URL": "postgresql://example.invalid/test"},
+            clear=True,
+        ):
+            self.assertEqual(get_database_backend(self.database_name), "sqlite")
+            self.assertEqual(get_all_applications(self.database_name), [])
 
     def test_get_all_applications_returns_an_empty_list_at_first(self):
         self.assertEqual(get_all_applications(self.database_name), [])

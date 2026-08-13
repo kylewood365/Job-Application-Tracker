@@ -8,6 +8,11 @@ __pycache__/
 venv/
 env/
 
+# Environment files can contain DATABASE_URL and other secrets
+.env
+.env.*
+!.env.example
+
 # Local SQLite data
 job_applications.db
 *.db-journal
