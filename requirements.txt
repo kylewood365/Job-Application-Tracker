@@ -1,2 +1,3 @@
 # Python packages needed to run the web app.
 streamlit
+psycopg[binary]

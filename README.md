@@ -3,7 +3,8 @@
 A lightweight web application for organizing a job search in one place. The
 tracker lets you record opportunities, follow each application through the
 hiring process, and quickly find the information you need. Data is stored in a
-local SQLite database and presented through a Streamlit interface.
+local SQLite database during development, or a hosted Neon PostgreSQL database
+in production, and presented through a Streamlit interface.
 
 ## Features
 
@@ -15,7 +16,7 @@ local SQLite database and presented through a Streamlit interface.
 - Filter saved applications by status.
 - Update an application's status.
 - Delete applications after confirming the action.
-- Keep application data locally in a small SQLite database.
+- Store application data in SQLite locally or Neon PostgreSQL in production.
 
 ## Technologies Used
 
@@ -24,6 +25,9 @@ local SQLite database and presented through a Streamlit interface.
   a separate frontend framework.
 - **SQLite** stores application records in a local `job_applications.db` file.
   SQLite is built into Python, so no separate database server is required.
+- **Neon PostgreSQL** provides persistent production storage when a
+  `DATABASE_URL` environment variable is configured. Psycopg connects the app
+  to PostgreSQL.
 - **Git and GitHub** provide version control, change history, and a place to
   host and collaborate on the source code.
 
@@ -93,11 +97,34 @@ Job-Application-Tracker/
 The app creates `job_applications.db` at runtime. It is local data, so it is
 ignored by Git and does not appear in the project tree above.
 
+## Use Neon in Production
+
+The database backend is selected automatically:
+
+- When `DATABASE_URL` is set, the app connects to Neon PostgreSQL with Psycopg.
+- When `DATABASE_URL` is not set, the app continues to use
+  `job_applications.db` with SQLite. This is also how the automated tests run
+  without external credentials.
+
+Create a Neon project, copy its PostgreSQL connection string, and configure it
+as the `DATABASE_URL` secret in your hosting provider. For example, in a shell
+you can set it before starting Streamlit:
+
+```bash
+export DATABASE_URL="your-Neon-connection-string"
+streamlit run app.py
+```
+
+Never commit the real value. `.env` files are ignored by Git because they can
+contain secrets. The app creates the `applications` table in Neon automatically
+on startup if it does not already exist.
+
 ## CRUD Operations
 
 CRUD describes the four basic operations used to manage stored data:
 
-- **Create:** the add-application form inserts a new application into SQLite.
+- **Create:** the add-application form inserts a new application into the
+  selected database.
 - **Read:** the dashboard, saved-application list, search, and status filter
   retrieve application records.
 - **Update:** the status control changes the selected application's progress.
@@ -111,17 +138,15 @@ record without requiring users to work with the database directly.
 The repository can be connected to Streamlit Community Cloud with `app.py` as
 the entry point. `requirements.txt` supplies the required Streamlit package.
 
-SQLite is well suited to local development and small, single-user projects.
-However, local SQLite storage on Streamlit Community Cloud is **not guaranteed
-to persist**: app restarts, redeployments, or infrastructure changes can remove
-the locally created database. Use an external persistent database or storage
-service before relying on the hosted app for durable data.
+SQLite is well suited to local development and automated tests. Local SQLite
+storage on Streamlit Community Cloud is **not guaranteed to persist**, so set
+the hosted app's `DATABASE_URL` secret to a Neon connection string for durable
+production data. If the secret is absent, the SQLite fallback remains active.
 
 ## Future Improvements
 
 Potential follow-up work includes:
 
-- Use a hosted database for reliable multi-session deployment storage.
 - Add authentication so each user has a private set of applications.
 - Add more reporting and visualizations for job-search trends.
 - Export and import application data in common formats such as CSV.
