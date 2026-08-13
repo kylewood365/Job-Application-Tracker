@@ -41,6 +41,11 @@ interview_date = st.date_input(
     "Interview date (optional)",
     value=None,
 )
+salary = st.text_input("Salary (optional)", placeholder="For example: $75,000")
+notes = st.text_area(
+    "Notes (optional)",
+    placeholder="Add useful details about the role or application",
+)
 
 if st.button("Save application"):
     if not company.strip() or not position.strip():
@@ -54,6 +59,8 @@ if st.button("Save application"):
             interview_date=(
                 interview_date.isoformat() if interview_date is not None else None
             ),
+            salary=salary.strip() or None,
+            notes=notes.strip() or None,
         )
         st.success("Application saved successfully!")
 
@@ -106,7 +113,7 @@ st.subheader("Saved Applications")
 
 search_text = st.text_input(
     "Search saved applications",
-    placeholder="Search by company or position",
+    placeholder="Search by company, position, or notes",
 )
 
 status_filter = st.selectbox(
@@ -124,13 +131,19 @@ if applications:
         saved_status,
         saved_date_applied,
         saved_interview_date,
+        saved_salary,
+        saved_notes,
     ) in applications:
         details = f"**{saved_company}** — {saved_position} — {saved_status}"
         if saved_date_applied:
             details += f" — Applied: {saved_date_applied}"
         if saved_interview_date:
             details += f" — Interview: {saved_interview_date}"
+        if saved_salary:
+            details += f" — Salary: {saved_salary}"
         st.write(details)
+        if saved_notes:
+            st.write(f"Notes: {saved_notes}")
 else:
     if search_text.strip():
         st.info("No applications match your search. Try a different search term.")

@@ -43,8 +43,12 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(
             applications,
             [
-                ("Example Company", "Developer", "Applied", None, None),
-                ("Another Company", "Designer", "Interview", None, None),
+                (
+                    "Example Company", "Developer", "Applied", None, None, None, None
+                ),
+                (
+                    "Another Company", "Designer", "Interview", None, None, None, None
+                ),
             ],
         )
 
@@ -77,8 +81,8 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(
             applications,
             [
-                ("Example Company", "Developer", "Applied", None, None),
-                ("Another Company", "Designer", "Interview", None, None),
+                ("Example Company", "Developer", "Applied", None, None, None, None),
+                ("Another Company", "Designer", "Interview", None, None, None, None),
             ],
         )
 
@@ -92,8 +96,8 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(
             applications,
             [
-                ("Example Company", "Developer", "Applied", None, None),
-                ("Third Company", "Engineer", "Applied", None, None),
+                ("Example Company", "Developer", "Applied", None, None, None, None),
+                ("Third Company", "Engineer", "Applied", None, None, None, None),
             ],
         )
 
@@ -112,7 +116,7 @@ class DatabaseTests(unittest.TestCase):
 
         self.assertEqual(
             applications,
-            [("Example Company", "Developer", "Applied", None, None)],
+            [("Example Company", "Developer", "Applied", None, None, None, None)],
         )
 
     def test_search_finds_position_case_insensitively(self):
@@ -123,7 +127,17 @@ class DatabaseTests(unittest.TestCase):
 
         self.assertEqual(
             applications,
-            [("Example Company", "Software Developer", "Applied", None, None)],
+            [
+                (
+                    "Example Company",
+                    "Software Developer",
+                    "Applied",
+                    None,
+                    None,
+                    None,
+                    None,
+                )
+            ],
         )
 
     def test_search_works_with_status_filter(self):
@@ -136,7 +150,7 @@ class DatabaseTests(unittest.TestCase):
 
         self.assertEqual(
             applications,
-            [("Second Company", "Developer", "Interview", None, None)],
+            [("Second Company", "Developer", "Interview", None, None, None, None)],
         )
 
     def test_empty_search_returns_applications_normally(self):
@@ -148,8 +162,8 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(
             applications,
             [
-                ("First Company", "Developer", "Applied", None, None),
-                ("Second Company", "Designer", "Interview", None, None),
+                ("First Company", "Developer", "Applied", None, None, None, None),
+                ("Second Company", "Designer", "Interview", None, None, None, None),
             ],
         )
 
@@ -172,8 +186,8 @@ class DatabaseTests(unittest.TestCase):
         self.assertEqual(
             get_all_applications(self.database_name),
             [
-                ("Example Company", "Developer", "Interview", None, None),
-                ("Another Company", "Designer", "Applied", None, None),
+                ("Example Company", "Developer", "Interview", None, None, None, None),
+                ("Another Company", "Designer", "Applied", None, None, None, None),
             ],
         )
 
@@ -186,7 +200,7 @@ class DatabaseTests(unittest.TestCase):
 
         self.assertEqual(
             get_all_applications(self.database_name),
-            [("Another Company", "Designer", "Interview", None, None)],
+            [("Another Company", "Designer", "Interview", None, None, None, None)],
         )
 
     def test_delete_application_ignores_an_unknown_id(self):
@@ -196,7 +210,7 @@ class DatabaseTests(unittest.TestCase):
 
         self.assertEqual(
             get_all_applications(self.database_name),
-            [("Example Company", "Developer", "Applied", None, None)],
+            [("Example Company", "Developer", "Applied", None, None, None, None)],
         )
 
     def test_date_applied_and_interview_date_are_saved(self):
@@ -218,6 +232,8 @@ class DatabaseTests(unittest.TestCase):
                     "Interview",
                     "2026-08-01",
                     "2026-08-15",
+                    None,
+                    None,
                 )
             ],
         )
@@ -233,7 +249,85 @@ class DatabaseTests(unittest.TestCase):
 
         self.assertEqual(
             get_all_applications(self.database_name),
-            [("Example Company", "Developer", "Applied", "2026-08-01", None)],
+            [
+                (
+                    "Example Company",
+                    "Developer",
+                    "Applied",
+                    "2026-08-01",
+                    None,
+                    None,
+                    None,
+                )
+            ],
+        )
+
+    def test_salary_and_notes_are_saved(self):
+        add_application(
+            "Example Company",
+            "Developer",
+            "Applied",
+            self.database_name,
+            salary="$80,000",
+            notes="Ask about remote work.",
+        )
+
+        self.assertEqual(
+            get_all_applications(self.database_name),
+            [
+                (
+                    "Example Company",
+                    "Developer",
+                    "Applied",
+                    None,
+                    None,
+                    "$80,000",
+                    "Ask about remote work.",
+                )
+            ],
+        )
+
+    def test_salary_and_notes_can_be_empty(self):
+        add_application("Example Company", "Developer", "Applied", self.database_name)
+
+        self.assertEqual(
+            get_all_applications(self.database_name),
+            [("Example Company", "Developer", "Applied", None, None, None, None)],
+        )
+
+    def test_search_finds_text_in_notes_and_respects_status_filter(self):
+        add_application(
+            "First Company",
+            "Developer",
+            "Applied",
+            self.database_name,
+            notes="Referral from Taylor",
+        )
+        add_application(
+            "Second Company",
+            "Designer",
+            "Interview",
+            self.database_name,
+            notes="TAYLOR will join the interview",
+        )
+
+        applications = search_applications(
+            "taylor", "Interview", self.database_name
+        )
+
+        self.assertEqual(
+            applications,
+            [
+                (
+                    "Second Company",
+                    "Designer",
+                    "Interview",
+                    None,
+                    None,
+                    None,
+                    "TAYLOR will join the interview",
+                )
+            ],
         )
 
     def test_initialize_database_migrates_an_existing_database_safely(self):
@@ -260,8 +354,14 @@ class DatabaseTests(unittest.TestCase):
 
         self.assertEqual(
             get_all_applications(self.database_name),
-            [("Saved Company", "Engineer", "Applied", None, None)],
+            [("Saved Company", "Engineer", "Applied", None, None, None, None)],
         )
+        connection = sqlite3.connect(self.database_name)
+        table_information = connection.execute("PRAGMA table_info(applications)")
+        columns = {column[1] for column in table_information}
+        connection.close()
+        self.assertIn("salary", columns)
+        self.assertIn("notes", columns)
 
 
 if __name__ == "__main__":
