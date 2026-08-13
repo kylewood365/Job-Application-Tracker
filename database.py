@@ -21,7 +21,9 @@ def initialize_database(database_name=DATABASE_NAME):
             position TEXT NOT NULL,
             status TEXT NOT NULL DEFAULT 'Applied',
             date_applied TEXT,
-            interview_date TEXT
+            interview_date TEXT,
+            salary TEXT,
+            notes TEXT
         )
         """
     )
@@ -33,6 +35,10 @@ def initialize_database(database_name=DATABASE_NAME):
         cursor.execute("ALTER TABLE applications ADD COLUMN date_applied TEXT")
     if "interview_date" not in existing_columns:
         cursor.execute("ALTER TABLE applications ADD COLUMN interview_date TEXT")
+    if "salary" not in existing_columns:
+        cursor.execute("ALTER TABLE applications ADD COLUMN salary TEXT")
+    if "notes" not in existing_columns:
+        cursor.execute("ALTER TABLE applications ADD COLUMN notes TEXT")
 
     connection.commit()
     connection.close()
@@ -45,6 +51,8 @@ def add_application(
     database_name=DATABASE_NAME,
     date_applied=None,
     interview_date=None,
+    salary=None,
+    notes=None,
 ):
     """Add one job application to the applications table."""
     connection = sqlite3.connect(database_name)
@@ -53,10 +61,10 @@ def add_application(
     cursor.execute(
         """
         INSERT INTO applications
-            (company, position, status, date_applied, interview_date)
-        VALUES (?, ?, ?, ?, ?)
+            (company, position, status, date_applied, interview_date, salary, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-        (company, position, status, date_applied, interview_date),
+        (company, position, status, date_applied, interview_date, salary, notes),
     )
 
     connection.commit()
@@ -95,7 +103,8 @@ def get_applications_with_ids(database_name=DATABASE_NAME):
 
     cursor.execute(
         """
-        SELECT id, company, position, status, date_applied, interview_date
+        SELECT id, company, position, status, date_applied, interview_date,
+               salary, notes
         FROM applications ORDER BY id
         """
     )
@@ -112,7 +121,7 @@ def get_all_applications(database_name=DATABASE_NAME):
 
     cursor.execute(
         """
-        SELECT company, position, status, date_applied, interview_date
+        SELECT company, position, status, date_applied, interview_date, salary, notes
         FROM applications ORDER BY id
         """
     )
@@ -161,7 +170,7 @@ def get_applications_by_status(status, database_name=DATABASE_NAME):
 
     cursor.execute(
         """
-        SELECT company, position, status, date_applied, interview_date
+        SELECT company, position, status, date_applied, interview_date, salary, notes
         FROM applications
         WHERE status = ?
         ORDER BY id
@@ -175,7 +184,7 @@ def get_applications_by_status(status, database_name=DATABASE_NAME):
 
 
 def search_applications(search_text, status="All", database_name=DATABASE_NAME):
-    """Search company and position names, optionally filtering by status."""
+    """Search company, position, and notes, optionally filtering by status."""
     connection = sqlite3.connect(database_name)
     cursor = connection.cursor()
 
@@ -185,25 +194,29 @@ def search_applications(search_text, status="All", database_name=DATABASE_NAME):
     if status == "All":
         cursor.execute(
             """
-            SELECT company, position, status, date_applied, interview_date
+            SELECT company, position, status, date_applied, interview_date,
+                   salary, notes
             FROM applications
             WHERE company LIKE ? COLLATE NOCASE
                OR position LIKE ? COLLATE NOCASE
+               OR notes LIKE ? COLLATE NOCASE
             ORDER BY id
             """,
-            (search_pattern, search_pattern),
+            (search_pattern, search_pattern, search_pattern),
         )
     else:
         cursor.execute(
             """
-            SELECT company, position, status, date_applied, interview_date
+            SELECT company, position, status, date_applied, interview_date,
+                   salary, notes
             FROM applications
             WHERE status = ?
               AND (company LIKE ? COLLATE NOCASE
-                   OR position LIKE ? COLLATE NOCASE)
+                   OR position LIKE ? COLLATE NOCASE
+                   OR notes LIKE ? COLLATE NOCASE)
             ORDER BY id
             """,
-            (status, search_pattern, search_pattern),
+            (status, search_pattern, search_pattern, search_pattern),
         )
 
     applications = cursor.fetchall()
