@@ -4,7 +4,13 @@ import os
 import tempfile
 import unittest
 
-from database import add_application, get_all_applications, initialize_database
+from database import (
+    add_application,
+    get_applications_with_ids,
+    get_all_applications,
+    initialize_database,
+    update_application_status,
+)
 
 
 class DatabaseTests(unittest.TestCase):
@@ -33,6 +39,23 @@ class DatabaseTests(unittest.TestCase):
             [
                 ("Example Company", "Developer", "Applied"),
                 ("Another Company", "Designer", "Interview"),
+            ],
+        )
+
+    def test_update_application_status_updates_the_selected_application(self):
+        add_application("Example Company", "Developer", "Applied", self.database_name)
+        add_application("Another Company", "Designer", "Applied", self.database_name)
+        first_application_id = get_applications_with_ids(self.database_name)[0][0]
+
+        update_application_status(
+            first_application_id, "Interview", self.database_name
+        )
+
+        self.assertEqual(
+            get_all_applications(self.database_name),
+            [
+                ("Example Company", "Developer", "Interview"),
+                ("Another Company", "Designer", "Applied"),
             ],
         )
 
