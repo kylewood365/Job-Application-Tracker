@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-from database import add_application, initialize_database
+from database import add_application, get_all_applications, initialize_database
 
 
 # Create the database table before showing the page.
@@ -23,3 +23,13 @@ if st.button("Save application"):
     else:
         add_application(company.strip(), position.strip(), status)
         st.success("Application saved successfully!")
+
+st.subheader("Saved Applications")
+
+applications = get_all_applications()
+
+if applications:
+    for saved_company, saved_position, saved_status in applications:
+        st.write(f"**{saved_company}** — {saved_position} — {saved_status}")
+else:
+    st.info("There are no applications yet. Add your first application above!")

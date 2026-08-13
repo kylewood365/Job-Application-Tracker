@@ -1,0 +1,41 @@
+"""Tests for the Job Application Tracker database functions."""
+
+import os
+import tempfile
+import unittest
+
+from database import add_application, get_all_applications, initialize_database
+
+
+class DatabaseTests(unittest.TestCase):
+    """Check that applications can be saved and retrieved."""
+
+    def setUp(self):
+        temporary_database = tempfile.NamedTemporaryFile(delete=False)
+        self.database_name = temporary_database.name
+        temporary_database.close()
+        initialize_database(self.database_name)
+
+    def tearDown(self):
+        os.remove(self.database_name)
+
+    def test_get_all_applications_returns_an_empty_list_at_first(self):
+        self.assertEqual(get_all_applications(self.database_name), [])
+
+    def test_get_all_applications_returns_saved_applications(self):
+        add_application("Example Company", "Developer", "Applied", self.database_name)
+        add_application("Another Company", "Designer", "Interview", self.database_name)
+
+        applications = get_all_applications(self.database_name)
+
+        self.assertEqual(
+            applications,
+            [
+                ("Example Company", "Developer", "Applied"),
+                ("Another Company", "Designer", "Interview"),
+            ],
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()
