@@ -11,6 +11,7 @@ from database import (
     get_applications_with_ids,
     get_all_applications,
     initialize_database,
+    search_applications,
     update_application_status,
 )
 
@@ -77,6 +78,62 @@ class DatabaseTests(unittest.TestCase):
         add_application("Example Company", "Developer", "Applied", self.database_name)
 
         applications = get_applications_by_status("Offer", self.database_name)
+
+        self.assertEqual(applications, [])
+
+    def test_search_finds_company_name_case_insensitively(self):
+        add_application("Example Company", "Developer", "Applied", self.database_name)
+        add_application("Another Company", "Designer", "Interview", self.database_name)
+
+        applications = search_applications("eXaMpLe", database_name=self.database_name)
+
+        self.assertEqual(
+            applications,
+            [("Example Company", "Developer", "Applied")],
+        )
+
+    def test_search_finds_position_case_insensitively(self):
+        add_application("Example Company", "Software Developer", "Applied", self.database_name)
+        add_application("Another Company", "Designer", "Interview", self.database_name)
+
+        applications = search_applications("DEVELOPER", database_name=self.database_name)
+
+        self.assertEqual(
+            applications,
+            [("Example Company", "Software Developer", "Applied")],
+        )
+
+    def test_search_works_with_status_filter(self):
+        add_application("First Company", "Developer", "Applied", self.database_name)
+        add_application("Second Company", "Developer", "Interview", self.database_name)
+
+        applications = search_applications(
+            "developer", "Interview", self.database_name
+        )
+
+        self.assertEqual(
+            applications,
+            [("Second Company", "Developer", "Interview")],
+        )
+
+    def test_empty_search_returns_applications_normally(self):
+        add_application("First Company", "Developer", "Applied", self.database_name)
+        add_application("Second Company", "Designer", "Interview", self.database_name)
+
+        applications = search_applications("", "All", self.database_name)
+
+        self.assertEqual(
+            applications,
+            [
+                ("First Company", "Developer", "Applied"),
+                ("Second Company", "Designer", "Interview"),
+            ],
+        )
+
+    def test_search_returns_an_empty_list_when_nothing_matches(self):
+        add_application("Example Company", "Developer", "Applied", self.database_name)
+
+        applications = search_applications("accountant", database_name=self.database_name)
 
         self.assertEqual(applications, [])
 
