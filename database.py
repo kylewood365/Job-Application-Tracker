@@ -4,6 +4,7 @@ import sqlite3
 
 
 DATABASE_NAME = "job_applications.db"
+APPLICATION_STATUSES = ["Applied", "Interview", "Offer", "Rejected"]
 
 
 def initialize_database(database_name=DATABASE_NAME):
@@ -92,6 +93,35 @@ def get_all_applications(database_name=DATABASE_NAME):
 
     connection.close()
     return applications
+
+
+def get_total_application_count(database_name=DATABASE_NAME):
+    """Return the total number of saved applications."""
+    connection = sqlite3.connect(database_name)
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM applications")
+    total = cursor.fetchone()[0]
+
+    connection.close()
+    return total
+
+
+def get_application_counts_by_status(database_name=DATABASE_NAME):
+    """Return the number of applications saved under each dashboard status."""
+    counts = {status: 0 for status in APPLICATION_STATUSES}
+    connection = sqlite3.connect(database_name)
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT status, COUNT(*) FROM applications GROUP BY status"
+    )
+    for status, count in cursor.fetchall():
+        if status in counts:
+            counts[status] = count
+
+    connection.close()
+    return counts
 
 
 def get_applications_by_status(status, database_name=DATABASE_NAME):

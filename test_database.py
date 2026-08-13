@@ -7,9 +7,11 @@ import unittest
 from database import (
     add_application,
     delete_application,
+    get_application_counts_by_status,
     get_applications_by_status,
     get_applications_with_ids,
     get_all_applications,
+    get_total_application_count,
     initialize_database,
     search_applications,
     update_application_status,
@@ -43,6 +45,26 @@ class DatabaseTests(unittest.TestCase):
                 ("Example Company", "Developer", "Applied"),
                 ("Another Company", "Designer", "Interview"),
             ],
+        )
+
+    def test_dashboard_counts_are_zero_when_there_are_no_applications(self):
+        self.assertEqual(get_total_application_count(self.database_name), 0)
+        self.assertEqual(
+            get_application_counts_by_status(self.database_name),
+            {"Applied": 0, "Interview": 0, "Offer": 0, "Rejected": 0},
+        )
+
+    def test_dashboard_counts_saved_applications_by_status(self):
+        add_application("First Company", "Developer", "Applied", self.database_name)
+        add_application("Second Company", "Designer", "Applied", self.database_name)
+        add_application("Third Company", "Engineer", "Interview", self.database_name)
+        add_application("Fourth Company", "Manager", "Offer", self.database_name)
+        add_application("Fifth Company", "Writer", "Rejected", self.database_name)
+
+        self.assertEqual(get_total_application_count(self.database_name), 5)
+        self.assertEqual(
+            get_application_counts_by_status(self.database_name),
+            {"Applied": 2, "Interview": 1, "Offer": 1, "Rejected": 1},
         )
 
     def test_filter_all_returns_every_application(self):
