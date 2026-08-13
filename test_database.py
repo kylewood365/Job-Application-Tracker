@@ -4,8 +4,10 @@ import os
 import sqlite3
 import tempfile
 import unittest
+from contextlib import contextmanager
 from unittest.mock import patch
 
+import database
 from database import (
     add_application,
     delete_application,
@@ -54,6 +56,49 @@ class DatabaseTests(unittest.TestCase):
         ):
             self.assertEqual(get_database_backend(self.database_name), "sqlite")
             self.assertEqual(get_all_applications(self.database_name), [])
+
+    def test_postgresql_initialization_locks_schema_changes_in_one_transaction(self):
+        executed_statements = []
+
+        class RecordingCursor:
+            def execute(self, statement, parameters=None):
+                executed_statements.append((" ".join(statement.split()), parameters))
+
+            def fetchall(self):
+                return []
+
+        class RecordingConnection:
+            def cursor(self):
+                return RecordingCursor()
+
+        @contextmanager
+        def recording_connection(_database_name):
+            yield RecordingConnection()
+
+        with patch.object(database, "get_database_backend", return_value="postgresql"), patch.object(
+            database, "_connect", recording_connection
+        ):
+            initialize_database()
+
+        self.assertEqual(
+            executed_statements[0],
+            (
+                "SELECT pg_advisory_xact_lock(%s)",
+                (database.POSTGRESQL_SCHEMA_LOCK_KEY,),
+            ),
+        )
+        self.assertTrue(executed_statements[1][0].startswith("CREATE TABLE IF NOT EXISTS"))
+        self.assertEqual(len(executed_statements), 6)
+
+        executed_statements.clear()
+        with patch.object(database, "get_database_backend", return_value="sqlite"), patch.object(
+            database, "_connect", recording_connection
+        ):
+            initialize_database(self.database_name)
+
+        self.assertFalse(
+            any("pg_advisory_xact_lock" in statement for statement, _ in executed_statements)
+        )
 
     def test_get_all_applications_returns_an_empty_list_at_first(self):
         self.assertEqual(get_all_applications(self.database_name), [])

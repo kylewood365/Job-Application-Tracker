@@ -7,6 +7,7 @@ from contextlib import contextmanager
 
 DATABASE_NAME = "job_applications.db"
 APPLICATION_STATUSES = ["Applied", "Interview", "Offer", "Rejected"]
+POSTGRESQL_SCHEMA_LOCK_KEY = 514_227_903_101
 
 
 def get_database_backend(database_name=DATABASE_NAME):
@@ -55,6 +56,13 @@ def initialize_database(database_name=DATABASE_NAME):
 
     with _connect(database_name) as connection:
         cursor = connection.cursor()
+        if postgresql:
+            # Serialize startup because PostgreSQL's IF NOT EXISTS can still race.
+            cursor.execute(
+                "SELECT pg_advisory_xact_lock(%s)",
+                (POSTGRESQL_SCHEMA_LOCK_KEY,),
+            )
+
         cursor.execute(
             f"""
             CREATE TABLE IF NOT EXISTS applications (
