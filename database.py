@@ -8,7 +8,7 @@ APPLICATION_STATUSES = ["Applied", "Interview", "Offer", "Rejected"]
 
 
 def initialize_database(database_name=DATABASE_NAME):
-    """Create the applications table if it does not already exist."""
+    """Create the applications table and add any columns introduced later."""
     connection = sqlite3.connect(database_name)
     cursor = connection.cursor()
 
@@ -19,23 +19,44 @@ def initialize_database(database_name=DATABASE_NAME):
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             company TEXT NOT NULL,
             position TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'Applied'
+            status TEXT NOT NULL DEFAULT 'Applied',
+            date_applied TEXT,
+            interview_date TEXT
         )
         """
     )
+
+    # ALTER TABLE keeps rows from databases created by older versions of the app.
+    cursor.execute("PRAGMA table_info(applications)")
+    existing_columns = {column[1] for column in cursor.fetchall()}
+    if "date_applied" not in existing_columns:
+        cursor.execute("ALTER TABLE applications ADD COLUMN date_applied TEXT")
+    if "interview_date" not in existing_columns:
+        cursor.execute("ALTER TABLE applications ADD COLUMN interview_date TEXT")
 
     connection.commit()
     connection.close()
 
 
-def add_application(company, position, status, database_name=DATABASE_NAME):
+def add_application(
+    company,
+    position,
+    status,
+    database_name=DATABASE_NAME,
+    date_applied=None,
+    interview_date=None,
+):
     """Add one job application to the applications table."""
     connection = sqlite3.connect(database_name)
     cursor = connection.cursor()
 
     cursor.execute(
-        "INSERT INTO applications (company, position, status) VALUES (?, ?, ?)",
-        (company, position, status),
+        """
+        INSERT INTO applications
+            (company, position, status, date_applied, interview_date)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (company, position, status, date_applied, interview_date),
     )
 
     connection.commit()
@@ -73,7 +94,10 @@ def get_applications_with_ids(database_name=DATABASE_NAME):
     cursor = connection.cursor()
 
     cursor.execute(
-        "SELECT id, company, position, status FROM applications ORDER BY id"
+        """
+        SELECT id, company, position, status, date_applied, interview_date
+        FROM applications ORDER BY id
+        """
     )
     applications = cursor.fetchall()
 
@@ -87,7 +111,10 @@ def get_all_applications(database_name=DATABASE_NAME):
     cursor = connection.cursor()
 
     cursor.execute(
-        "SELECT company, position, status FROM applications ORDER BY id"
+        """
+        SELECT company, position, status, date_applied, interview_date
+        FROM applications ORDER BY id
+        """
     )
     applications = cursor.fetchall()
 
@@ -134,7 +161,7 @@ def get_applications_by_status(status, database_name=DATABASE_NAME):
 
     cursor.execute(
         """
-        SELECT company, position, status
+        SELECT company, position, status, date_applied, interview_date
         FROM applications
         WHERE status = ?
         ORDER BY id
@@ -158,7 +185,7 @@ def search_applications(search_text, status="All", database_name=DATABASE_NAME):
     if status == "All":
         cursor.execute(
             """
-            SELECT company, position, status
+            SELECT company, position, status, date_applied, interview_date
             FROM applications
             WHERE company LIKE ? COLLATE NOCASE
                OR position LIKE ? COLLATE NOCASE
@@ -169,7 +196,7 @@ def search_applications(search_text, status="All", database_name=DATABASE_NAME):
     else:
         cursor.execute(
             """
-            SELECT company, position, status
+            SELECT company, position, status, date_applied, interview_date
             FROM applications
             WHERE status = ?
               AND (company LIKE ? COLLATE NOCASE
