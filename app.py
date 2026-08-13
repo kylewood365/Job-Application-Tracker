@@ -5,9 +5,9 @@ import streamlit as st
 from database import (
     add_application,
     delete_application,
-    get_applications_by_status,
     get_applications_with_ids,
     initialize_database,
+    search_applications,
     update_application_status,
 )
 
@@ -76,21 +76,28 @@ if applications_with_ids:
 else:
     st.info("There are no applications to delete.")
 
+st.subheader("Saved Applications")
+
+search_text = st.text_input(
+    "Search saved applications",
+    placeholder="Search by company or position",
+)
+
 status_filter = st.selectbox(
     "Filter saved applications by status",
     ["All", "Applied", "Interview", "Offer", "Rejected"],
 )
 
-st.subheader("Saved Applications")
-
 # Read the applications after updates or deletions so changes appear immediately.
-applications = get_applications_by_status(status_filter)
+applications = search_applications(search_text, status_filter)
 
 if applications:
     for saved_company, saved_position, saved_status in applications:
         st.write(f"**{saved_company}** — {saved_position} — {saved_status}")
 else:
-    if status_filter == "All":
+    if search_text.strip():
+        st.info("No applications match your search. Try a different search term.")
+    elif status_filter == "All":
         st.info("There are no applications yet. Add your first application above!")
     else:
         st.info(f"There are no applications with the status {status_filter}.")

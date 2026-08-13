@@ -115,3 +115,40 @@ def get_applications_by_status(status, database_name=DATABASE_NAME):
 
     connection.close()
     return applications
+
+
+def search_applications(search_text, status="All", database_name=DATABASE_NAME):
+    """Search company and position names, optionally filtering by status."""
+    connection = sqlite3.connect(database_name)
+    cursor = connection.cursor()
+
+    # The percent signs allow the search text to appear anywhere in either name.
+    search_pattern = f"%{search_text.strip()}%"
+
+    if status == "All":
+        cursor.execute(
+            """
+            SELECT company, position, status
+            FROM applications
+            WHERE company LIKE ? COLLATE NOCASE
+               OR position LIKE ? COLLATE NOCASE
+            ORDER BY id
+            """,
+            (search_pattern, search_pattern),
+        )
+    else:
+        cursor.execute(
+            """
+            SELECT company, position, status
+            FROM applications
+            WHERE status = ?
+              AND (company LIKE ? COLLATE NOCASE
+                   OR position LIKE ? COLLATE NOCASE)
+            ORDER BY id
+            """,
+            (status, search_pattern, search_pattern),
+        )
+
+    applications = cursor.fetchall()
+    connection.close()
+    return applications
