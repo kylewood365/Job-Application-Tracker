@@ -1,0 +1,6 @@
+# Ignore Python cache files, local environments, and the generated database.
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+job_applications.db
