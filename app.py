@@ -5,7 +5,9 @@ import streamlit as st
 from database import (
     add_application,
     delete_application,
+    get_application_counts_by_status,
     get_applications_with_ids,
+    get_total_application_count,
     initialize_database,
     search_applications,
     update_application_status,
@@ -19,6 +21,17 @@ st.set_page_config(page_title="Job Application Tracker", page_icon="💼")
 
 st.title("💼 Job Application Tracker")
 st.write("Welcome! This app will help you keep track of your job applications.")
+
+st.subheader("Dashboard Summary")
+total_count = get_total_application_count()
+status_counts = get_application_counts_by_status()
+
+total_card, applied_card, interview_card, offer_card, rejected_card = st.columns(5)
+total_card.metric("Total", total_count)
+applied_card.metric("Applied", status_counts["Applied"])
+interview_card.metric("Interview", status_counts["Interview"])
+offer_card.metric("Offer", status_counts["Offer"])
+rejected_card.metric("Rejected", status_counts["Rejected"])
 
 company = st.text_input("Company")
 position = st.text_input("Position / Job title")
