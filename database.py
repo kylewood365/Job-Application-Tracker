@@ -55,6 +55,17 @@ def update_application_status(application_id, new_status, database_name=DATABASE
     connection.close()
 
 
+def delete_application(application_id, database_name=DATABASE_NAME):
+    """Delete one saved application using its database ID."""
+    connection = sqlite3.connect(database_name)
+    cursor = connection.cursor()
+
+    cursor.execute("DELETE FROM applications WHERE id = ?", (application_id,))
+
+    connection.commit()
+    connection.close()
+
+
 def get_applications_with_ids(database_name=DATABASE_NAME):
     """Return every saved application, including its database ID."""
     connection = sqlite3.connect(database_name)
