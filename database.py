@@ -39,3 +39,17 @@ def add_application(company, position, status, database_name=DATABASE_NAME):
 
     connection.commit()
     connection.close()
+
+
+def get_all_applications(database_name=DATABASE_NAME):
+    """Return every saved application from the applications table."""
+    connection = sqlite3.connect(database_name)
+    cursor = connection.cursor()
+
+    cursor.execute(
+        "SELECT company, position, status FROM applications ORDER BY id"
+    )
+    applications = cursor.fetchall()
+
+    connection.close()
+    return applications
