@@ -6,6 +6,7 @@ import unittest
 
 from database import (
     add_application,
+    delete_application,
     get_applications_with_ids,
     get_all_applications,
     initialize_database,
@@ -57,6 +58,28 @@ class DatabaseTests(unittest.TestCase):
                 ("Example Company", "Developer", "Interview"),
                 ("Another Company", "Designer", "Applied"),
             ],
+        )
+
+    def test_delete_application_deletes_only_the_selected_application(self):
+        add_application("Example Company", "Developer", "Applied", self.database_name)
+        add_application("Another Company", "Designer", "Interview", self.database_name)
+        first_application_id = get_applications_with_ids(self.database_name)[0][0]
+
+        delete_application(first_application_id, self.database_name)
+
+        self.assertEqual(
+            get_all_applications(self.database_name),
+            [("Another Company", "Designer", "Interview")],
+        )
+
+    def test_delete_application_ignores_an_unknown_id(self):
+        add_application("Example Company", "Developer", "Applied", self.database_name)
+
+        delete_application(999, self.database_name)
+
+        self.assertEqual(
+            get_all_applications(self.database_name),
+            [("Example Company", "Developer", "Applied")],
         )
 
 
