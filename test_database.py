@@ -7,6 +7,7 @@ import unittest
 from database import (
     add_application,
     delete_application,
+    get_applications_by_status,
     get_applications_with_ids,
     get_all_applications,
     initialize_database,
@@ -42,6 +43,42 @@ class DatabaseTests(unittest.TestCase):
                 ("Another Company", "Designer", "Interview"),
             ],
         )
+
+    def test_filter_all_returns_every_application(self):
+        add_application("Example Company", "Developer", "Applied", self.database_name)
+        add_application("Another Company", "Designer", "Interview", self.database_name)
+
+        applications = get_applications_by_status("All", self.database_name)
+
+        self.assertEqual(
+            applications,
+            [
+                ("Example Company", "Developer", "Applied"),
+                ("Another Company", "Designer", "Interview"),
+            ],
+        )
+
+    def test_filter_status_returns_only_matching_applications(self):
+        add_application("Example Company", "Developer", "Applied", self.database_name)
+        add_application("Another Company", "Designer", "Interview", self.database_name)
+        add_application("Third Company", "Engineer", "Applied", self.database_name)
+
+        applications = get_applications_by_status("Applied", self.database_name)
+
+        self.assertEqual(
+            applications,
+            [
+                ("Example Company", "Developer", "Applied"),
+                ("Third Company", "Engineer", "Applied"),
+            ],
+        )
+
+    def test_filter_status_returns_an_empty_list_when_nothing_matches(self):
+        add_application("Example Company", "Developer", "Applied", self.database_name)
+
+        applications = get_applications_by_status("Offer", self.database_name)
+
+        self.assertEqual(applications, [])
 
     def test_update_application_status_updates_the_selected_application(self):
         add_application("Example Company", "Developer", "Applied", self.database_name)

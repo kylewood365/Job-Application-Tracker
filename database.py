@@ -92,3 +92,26 @@ def get_all_applications(database_name=DATABASE_NAME):
 
     connection.close()
     return applications
+
+
+def get_applications_by_status(status, database_name=DATABASE_NAME):
+    """Return applications that match a status, or every application for All."""
+    if status == "All":
+        return get_all_applications(database_name)
+
+    connection = sqlite3.connect(database_name)
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT company, position, status
+        FROM applications
+        WHERE status = ?
+        ORDER BY id
+        """,
+        (status,),
+    )
+    applications = cursor.fetchall()
+
+    connection.close()
+    return applications
