@@ -6,6 +6,11 @@ hiring process, and quickly find the information you need. Data is stored in a
 local SQLite database during development, or a hosted Neon PostgreSQL database
 in production, and presented through a Streamlit interface.
 
+## Live Demo
+
+Try the [live Job Application Tracker](https://job-application-tracker-ehfmedyijdzmb3kznb9arp.streamlit.app)
+to explore the application in your browser.
+
 ## Features
 
 - Add applications with a company, position, status, application date,
@@ -135,13 +140,16 @@ record without requiring users to work with the database directly.
 
 ## Deployment Notes
 
-The repository can be connected to Streamlit Community Cloud with `app.py` as
-the entry point. `requirements.txt` supplies the required Streamlit package.
+The app is deployed on Streamlit Community Cloud with `app.py` as the entry
+point. `requirements.txt` supplies the required Streamlit package. The deployed
+app uses Neon PostgreSQL for persistent cloud storage through its configured
+`DATABASE_URL` secret.
 
 SQLite is well suited to local development and automated tests. Local SQLite
-storage on Streamlit Community Cloud is **not guaranteed to persist**, so set
-the hosted app's `DATABASE_URL` secret to a Neon connection string for durable
-production data. If the secret is absent, the SQLite fallback remains active.
+storage on Streamlit Community Cloud is **not guaranteed to persist**. For other
+deployments, set the hosted app's `DATABASE_URL` secret to a Neon connection
+string for durable production data. If the secret is absent, the SQLite
+fallback remains active.
 
 ## Future Improvements
 
